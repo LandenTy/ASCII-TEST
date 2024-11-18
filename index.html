@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webcam to ASCII</title>
+    <title>Webcam to Colored ASCII</title>
     <style>
         body {
             display: flex;
@@ -20,8 +20,10 @@
         }
         pre {
             line-height: 1em;
-            font-size: 8px;
+            font-size: 5px; /* Smaller font size for finer ASCII art */
             white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
         }
     </style>
 </head>
@@ -32,7 +34,7 @@
     <script>
         const video = document.getElementById("webcam");
         const asciiOutput = document.getElementById("ascii");
-        const asciiChars = "@%#*+=-:. "; // Characters for ASCII representation, ordered by brightness.
+        const asciiChars = "@%#*+=-:. "; // Characters for ASCII representation, ordered by brightness
 
         // Get the webcam stream
         navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
@@ -41,14 +43,14 @@
             console.error("Error accessing webcam: ", err);
         });
 
-        // Convert a frame to ASCII
+        // Convert a frame to colored ASCII
         function frameToASCII() {
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
 
-            // Set canvas size for ASCII resolution
-            const width = 80; // Change this for higher/lower ASCII resolution
-            const height = 60; // Maintain aspect ratio
+            // Scale canvas to fit the window
+            const width = window.innerWidth / 8; // Adjust width based on window size (adjust the divisor for pixel density)
+            const height = window.innerHeight / 10; // Adjust height based on window size
             canvas.width = width;
             canvas.height = height;
 
@@ -67,12 +69,16 @@
                     // Calculate brightness
                     const brightness = (r + g + b) / 3;
                     const charIndex = Math.floor((brightness / 255) * (asciiChars.length - 1));
-                    ascii += asciiChars[charIndex];
+                    const color = `rgb(${r}, ${g}, ${b})`; // RGB color for the character
+
+                    // Add the colored character to ASCII string
+                    ascii += `<span style="color: ${color}">${asciiChars[charIndex]}</span>`;
                 }
                 ascii += "\n"; // New line at the end of each row
             }
 
-            asciiOutput.textContent = ascii;
+            // Set the ASCII output with colored text
+            asciiOutput.innerHTML = ascii;
 
             // Repeat the process for the next frame
             requestAnimationFrame(frameToASCII);
