@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam to ASCII</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000;
+            color: #fff;
+            font-family: monospace;
+            overflow: hidden;
+            margin: 0;
+        }
+        video {
+            display: none;
+        }
+        pre {
+            line-height: 1em;
+            font-size: 8px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <video id="webcam" autoplay></video>
+    <pre id="ascii"></pre>
+
+    <script>
+        const video = document.getElementById("webcam");
+        const asciiOutput = document.getElementById("ascii");
+        const asciiChars = "@%#*+=-:. "; // Characters for ASCII representation, ordered by brightness.
+
+        // Get the webcam stream
+        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+            video.srcObject = stream;
+        }).catch((err) => {
+            console.error("Error accessing webcam: ", err);
+        });
+
+        // Convert a frame to ASCII
+        function frameToASCII() {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            // Set canvas size for ASCII resolution
+            const width = 80; // Change this for higher/lower ASCII resolution
+            const height = 60; // Maintain aspect ratio
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw the current video frame to the canvas
+            ctx.drawImage(video, 0, 0, width, height);
+            const imageData = ctx.getImageData(0, 0, width, height);
+
+            let ascii = "";
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const offset = (y * width + x) * 4; // RGBA offset
+                    const r = imageData.data[offset];
+                    const g = imageData.data[offset + 1];
+                    const b = imageData.data[offset + 2];
+
+                    // Calculate brightness
+                    const brightness = (r + g + b) / 3;
+                    const charIndex = Math.floor((brightness / 255) * (asciiChars.length - 1));
+                    ascii += asciiChars[charIndex];
+                }
+                ascii += "\n"; // New line at the end of each row
+            }
+
+            asciiOutput.textContent = ascii;
+
+            // Repeat the process for the next frame
+            requestAnimationFrame(frameToASCII);
+        }
+
+        // Start the ASCII conversion loop
+        video.addEventListener("play", () => {
+            frameToASCII();
+        });
+    </script>
+</body>
+</html>
